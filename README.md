@@ -77,30 +77,66 @@ curl -s -o /dev/null -w '%{http_code}\n' http://<你的IP>:7001/
 
 需要：Linux + iptables + docker（`DOCKER-USER` 链必须存在）+ root。
 
+### 一键安装
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Assute/xboard-allowlist/main/install.sh \
+  | sudo bash -s -- 203.0.113.10
+```
+
+把 `203.0.113.10` 换成你的 CDN 回源 IP。可以一次给多个：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Assute/xboard-allowlist/main/install.sh \
+  | sudo bash -s -- 203.0.113.10 198.51.100.0/24
+```
+
+不给参数就是只装不设白名单，装完再加：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Assute/xboard-allowlist/main/install.sh | sudo bash
+xboard-allowlist add <你的CDN回源IP>
+```
+
+端口不是 7001：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Assute/xboard-allowlist/main/install.sh \
+  | sudo XB_PORT=7002 bash
+```
+
+`raw.githubusercontent.com` 不通时换 CDN 镜像：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Assute/xboard-allowlist/main/install.sh \
+  | sudo XB_RAW=https://cdn.jsdelivr.net/gh/Assute/xboard-allowlist@main bash
+```
+
+### 从仓库安装
+
 ```bash
 git clone https://github.com/Assute/xboard-allowlist.git
 cd xboard-allowlist
-sudo ./install.sh
+sudo ./install.sh 203.0.113.10
 ```
 
-`install.sh` 做了三件事：
+### install.sh 做的事
 
 1. 把 `xboard-allowlist` 装到 `/usr/local/sbin/`
 2. 写 `/etc/systemd/system/xboard-allowlist.service`（`After=docker.service`，开机自动 apply）
-3. 首次 `apply`
+3. 命令行给了 IP 就逐条 `add`（`add` 内部自动 apply）
+4. 列表非空时按目标端口重新 apply
 
-如果 `ips.list` 已经存在，安装脚本不会覆盖它。
+重复执行是安全的：`ips.list` 已存在时不会被覆盖，iptables 规则每次全量重建。
 
-手动安装：
+### 手动安装
 
 ```bash
 install -m 755 xboard-allowlist /usr/local/sbin/xboard-allowlist
-xboard-allowlist list          # 会生成默认列表
-xboard-allowlist add <CDN的IP>
+xboard-allowlist add <你的CDN回源IP>
 ```
 
 ---
-
 ## 用法
 
 ### 交互菜单
