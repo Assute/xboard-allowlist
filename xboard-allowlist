@@ -303,6 +303,13 @@ case "${1:-}" in
     test)         cmd_test ;;
     raw)          iptables -vnL "$CHAIN" 2>/dev/null | grep -E -- "dpt:${PORT}([[:space:]]|$)" || true ;;
     help|-h|--help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//' ;;
-    "")           cmd_menu ;;
+    "")
+        # 通过 `curl ... | bash` 运行时 stdin 是管道，read 会立刻 EOF；
+        # 切到控制终端即可正常按数字操作。
+        if [ ! -t 0 ] && [ -r /dev/tty ]; then
+            exec < /dev/tty
+        fi
+        cmd_menu
+        ;;
     *)            err "未知命令: $1"; printf '试试: %s help\n' "$0"; exit 1 ;;
 esac
