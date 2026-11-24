@@ -236,10 +236,8 @@ cmd_menu() {
     local ch v t
     while :; do
         clear 2>/dev/null || true
-        printf '%s╔═══════════════════════════════════════════════╗%s\n' "$C" "$N"
-        printf '%s║    XBoard 回源放行管理  端口 %-5s           ║%s\n' "$C" "$PORT" "$N"
-        printf '%s║    后端链: %-12s  非 ufw                     ║%s\n' "$C" "$CHAIN" "$N"
-        printf '%s╚═══════════════════════════════════════════════╝%s\n' "$C" "$N"
+        printf '\n%s  XBoard 回源放行管理%s    端口 %s    后端链 %s（非 ufw）\n' \
+            "$B$C" "$N" "$PORT" "$CHAIN"
         cmd_list
         cat <<EOM
   ${C}1${N}) 添加 IP / 网段

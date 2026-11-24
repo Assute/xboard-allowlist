@@ -19,6 +19,10 @@
 #      2. 装 systemd unit 并 enable（开机自动 apply）
 #      3. 命令带 IP 时逐条 add（add 内部会自动 apply）
 #      4. 列表非空时重新 apply
+#      5. 装完直接进入交互菜单，用序号增删放行地址
+#
+#  装完不想进菜单（脚本化调用）：
+#      curl -fsSL ... | sudo XB_NO_MENU=1 bash
 #
 #  不会覆盖已有的 /etc/xboard-allowlist/ips.list
 # ============================================================================
@@ -130,3 +134,15 @@ echo "    $BIN del <序号|IP>      删除并自动 apply"
 echo "    $BIN list               列表 + 生效规则 + 命中计数"
 echo
 ylw "  注意: ufw allow from ... to any port $PORT 对 docker 发布的端口无效，可删掉。"
+
+# ---------------------------------------------------------------- 进菜单
+
+# curl | bash 时 stdin 是管道，但 /dev/tty 通常仍可读；
+# 把 stdin 换成 tty 就能直接在菜单里按序号操作。
+# 脚本化场景设 XB_NO_MENU=1 跳过。
+if [ -z "${XB_NO_MENU:-}" ] && [ -r /dev/tty ] && [ -t 1 ]; then
+    echo
+    grn ">>> 进入管理菜单（按 0 退出）"
+    sleep 1
+    XB_PORT="$PORT" "$BIN" < /dev/tty || true
+fi
