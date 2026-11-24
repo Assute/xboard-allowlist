@@ -104,6 +104,7 @@ flush_rules() {
 }
 
 apply_rules() {
+    lock_acquire || return 1
     local -a ips=()
     local ip i
 
@@ -138,6 +139,23 @@ apply_rules() {
 }
 
 # ---------------------------------------------------------------- 命令
+
+# 菜单里用的精简列表：只显示序号列表和条数
+cmd_list_brief() {
+    local n=0 ip
+
+    printf '\n%s端口 %s 放行列表%s   %s\n' "$B$C" "$PORT" "$N" "$LIST"
+    printf -- '---------------------------------------------\n'
+    while IFS= read -r ip; do
+        n=$((n+1))
+        printf '  %s%2d)%s %s\n' "$C" "$n" "$N" "$ip"
+    done < <(entries)
+    if [ "$n" -eq 0 ]; then
+        printf '  %s(空 —— 端口对所有来源开放，按 1 添加回源地址)%s\n' "$Y" "$N"
+    fi
+    printf -- '---------------------------------------------\n'
+    printf '  共 %d 条\n' "$n"
+}
 
 cmd_list() {
     local n=0 ip
@@ -238,9 +256,8 @@ cmd_menu() {
     local ch v t
     while :; do
         clear 2>/dev/null || true
-        printf '\n%s  XBoard 回源放行管理%s    端口 %s    后端链 %s（非 ufw）\n' \
-            "$B$C" "$N" "$PORT" "$CHAIN"
-        cmd_list
+        printf '\n%s  XBoard 回源放行管理%s   端口 %s\n' "$B$C" "$N" "$PORT"
+        cmd_list_brief
         cat <<EOM
   ${C}1${N}) 添加 IP / 网段
   ${C}2${N}) 删除 IP（输入序号或地址）
@@ -292,8 +309,13 @@ EOM
 need_root
 init_list
 
-exec 9>"$DIR/.lock" 2>/dev/null || true
-flock -n 9 2>/dev/null || { err "另一个实例正在运行"; exit 1; }
+# 写操作才加锁。菜单/列表不持锁，否则 systemd 启动时的 apply
+# 会因为有人开着菜单而拿不到锁，白名单悄悄失效。
+lock_acquire() {
+    exec 9>"$DIR/.lock" 2>/dev/null || return 0
+    flock -w 10 9 2>/dev/null || { err "另一个实例正在写规则，稍后再试"; return 1; }
+    return 0
+}
 
 case "${1:-}" in
     list|ls)      cmd_list ;;

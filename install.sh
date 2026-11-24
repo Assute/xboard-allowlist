@@ -122,26 +122,20 @@ systemctl restart xboard-allowlist.service >/dev/null 2>&1 || true
 # ---------------------------------------------------------------- 结果
 
 echo
-grn "安装完成。"
-echo
-XB_PORT="$PORT" "$BIN" list 2>/dev/null | sed 's/^/    /' || true
-echo
-echo "  常用命令："
-echo "    $BIN                    交互菜单"
-echo "    $BIN add <IP|CIDR>      添加并自动 apply"
-echo "    $BIN del <序号|IP>      删除并自动 apply"
-echo "    $BIN list               列表 + 生效规则 + 命中计数"
-echo
-ylw "  注意: ufw allow from ... to any port $PORT 对 docker 发布的端口无效，可删掉。"
 
-# ---------------------------------------------------------------- 进菜单
-
-# curl | bash 时 stdin 是管道，但 /dev/tty 通常仍可读；
-# 把 stdin 换成 tty 就能直接在菜单里按序号操作。
-# 脚本化场景设 XB_NO_MENU=1 跳过。
 if [ -z "${XB_NO_MENU:-}" ] && [ -r /dev/tty ] && [ -t 1 ]; then
-    echo
-    grn ">>> 进入管理菜单（按 0 退出）"
-    sleep 1
+    # curl | bash 时 stdin 是管道，但 /dev/tty 仍可读；
+    # 把 stdin 换成 tty 就能直接在菜单里按序号操作。
+    # 装完直接进菜单，放行列表就在菜单里，不再重复打印一遍。
     XB_PORT="$PORT" "$BIN" < /dev/tty || true
+else
+    grn "安装完成。"
+    echo
+    echo "  管理命令："
+    echo "    $BIN                 交互菜单"
+    echo "    $BIN list            列表 + 生效规则 + 命中计数"
+    echo "    $BIN add <IP|CIDR>   添加并自动 apply"
+    echo "    $BIN del <序号|IP>   删除并自动 apply"
+    echo
+    ylw "  注意: ufw allow from ... to any port $PORT 对 docker 发布的端口无效，可删掉。"
 fi
