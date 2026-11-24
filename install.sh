@@ -113,9 +113,8 @@ elif [ -s /etc/xboard-allowlist/ips.list ] && XB_PORT="$PORT" "$BIN" apply >/dev
     grn "==> 已有列表，已按端口 $PORT 重新应用"
 else
     ylw ""
-    ylw "没有提供放行地址，端口目前对所有来源开放。"
-    ylw "加一条再应用："
-    ylw "    $BIN add <你的CDN回源IP>"
+    ylw "没有提供放行地址 —— 端口目前对所有来源开放。"
+    ylw "下一步：在菜单里按 1，把 CDN 回源 IP 填进去，填完自动生效。"
 fi
 
 systemctl restart xboard-allowlist.service >/dev/null 2>&1 || true
